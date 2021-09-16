@@ -55,8 +55,7 @@ public class MiniMusicPlayer3 {
             sequencer.setTempoInBPM(BMP);
 
         } catch (Exception ex) {
-            //ex.printStackTrace();
-            System.out.println("Error!");
+            ex.printStackTrace();
         }
     }
 

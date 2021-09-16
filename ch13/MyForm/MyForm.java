@@ -1,3 +1,5 @@
+import static javax.swing.WindowConstants.EXIT_ON_CLOSE;
+
 import java.awt.*;
 import javax.swing.*;
 
@@ -14,11 +16,11 @@ public class MyForm {
 
     MyForm() {
         frame = new JFrame();
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        frame.setDefaultCloseOperation(EXIT_ON_CLOSE);
 
         JPanel bottomPanel = new JPanel();
         JPanel rigthPanel = new JPanel();
-        //rigthPanel.setLayout(new BorderLayout());
+        rigthPanel.setLayout(new BorderLayout());
         JPanel centralPanel = new JPanel();
 
         Container content = frame.getContentPane();
