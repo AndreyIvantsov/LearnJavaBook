@@ -2,18 +2,22 @@ package com.ivantsov.learn.beatbox;
 
 import javax.sound.midi.*;
 import javax.swing.*;
-import java.io.*;
-import java.util.*;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.io.*;
+import java.util.ArrayList;
 
 import static javax.sound.midi.Sequencer.LOOP_CONTINUOUSLY;
 import static javax.swing.WindowConstants.EXIT_ON_CLOSE;
 
-
 public class BeatBox {
 
     final int CHECKBOX_COUNT = 256;
+    final String DESCRIPTION_FILE = "*.ser";
+    final String EXTENSIONS_FILE = "ser";
+    final String CURRENT_DIRECTORY = "D:/";
 
     JPanel mainPanel;
     ArrayList<JCheckBox> checkBoxList;
@@ -36,12 +40,14 @@ public class BeatBox {
             56, 58, 47, 67, 60, 70, 72, 63
     };
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws UnsupportedLookAndFeelException, ClassNotFoundException, InstantiationException, IllegalAccessException {
+        //UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());      // Windows interface
+        UIManager.setLookAndFeel(UIManager.getCrossPlatformLookAndFeelClassName()); // Java interface
         new BeatBox().buildGUI();
     }
 
     public void buildGUI() {
-        theFrame = new JFrame("Cyber com.ivantsov.learn.beatbox.BeatBox");
+        theFrame = new JFrame("Cyber BeatBox");
         theFrame.setDefaultCloseOperation(EXIT_ON_CLOSE);
         BorderLayout layout = new BorderLayout();
         JPanel background = new JPanel(layout);
@@ -116,8 +122,8 @@ public class BeatBox {
         }
     }
 
-    public void buidlTrackAndStart() {
-        int[] trackList = null;
+    public void buildTrackAndStart() {
+        int[] trackList;
 
         sequence.deleteTrack(track);
         track = sequence.createTrack();
@@ -180,7 +186,7 @@ public class BeatBox {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            buidlTrackAndStart();
+            buildTrackAndStart();
         }
     }
 
@@ -218,19 +224,28 @@ public class BeatBox {
             boolean[] checkboxState = new boolean[CHECKBOX_COUNT];
 
             for (int i = 0; i < CHECKBOX_COUNT; i++) {
-                JCheckBox check = (JCheckBox) checkBoxList.get(i);
+                JCheckBox check = checkBoxList.get(i);
                 if (check.isSelected()) {
                     checkboxState[i] = true;
                 }
             }
 
-            try (ObjectOutputStream os = new ObjectOutputStream(
-                    new FileOutputStream(new File("Checkbox.ser")))) {
-                os.writeObject(checkboxState);
-            } catch (FileNotFoundException fileNotFoundException) {
-                fileNotFoundException.printStackTrace();
-            } catch (IOException ioException) {
-                ioException.printStackTrace();
+            JFileChooser fileChooser = new FactoryFileChooser().create();
+
+            if (fileChooser.showSaveDialog(theFrame) == JFileChooser.APPROVE_OPTION) {
+                File selectedFile = fileChooser.getSelectedFile();
+                String filePath = selectedFile.getPath();
+
+                if (FilenameUtils.getExtension(selectedFile).isEmpty()) {
+                    selectedFile = new File(filePath + "." + EXTENSIONS_FILE);
+                }
+
+                try (ObjectOutputStream os = new ObjectOutputStream(
+                        new FileOutputStream(selectedFile))) {
+                    os.writeObject(checkboxState);
+                } catch (IOException fileNotFoundException) {
+                    fileNotFoundException.printStackTrace();
+                }
             }
         }
     }
@@ -241,24 +256,49 @@ public class BeatBox {
         public void actionPerformed(ActionEvent e) {
             boolean[] checkboxState = null;
 
-            try (ObjectInputStream is = new ObjectInputStream(
-                    new FileInputStream(new File("Checkbox.ser")))) {
-                checkboxState = (boolean[]) is.readObject();
-            } catch (FileNotFoundException fileNotFoundException) {
-                fileNotFoundException.printStackTrace();
-            } catch (IOException ioException) {
-                ioException.printStackTrace();
-            } catch (ClassNotFoundException classNotFoundException) {
-                classNotFoundException.printStackTrace();
-            }
+            JFileChooser fileChooser = new FactoryFileChooser().create();
 
+            if (fileChooser.showOpenDialog(theFrame) == JFileChooser.APPROVE_OPTION) {
+                try (ObjectInputStream is = new ObjectInputStream(
+                        new FileInputStream(fileChooser.getSelectedFile()))) {
+                    checkboxState = (boolean[]) is.readObject();
+                } catch (IOException | ClassNotFoundException fileNotFoundException) {
+                    fileNotFoundException.printStackTrace();
+                }
+            }
             for (int i = 0; i < CHECKBOX_COUNT; i++) {
-                JCheckBox check = (JCheckBox) checkBoxList.get(i);
+                JCheckBox check = checkBoxList.get(i);
+                assert checkboxState != null;
                 check.setSelected(checkboxState[i]);
             }
 
             sequencer.stop();
-            buidlTrackAndStart();
+            buildTrackAndStart();
+        }
+
+    }
+
+    private class FactoryFileChooser {
+
+        public JFileChooser create() {
+            JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setFileFilter(new FileNameExtensionFilter(DESCRIPTION_FILE, EXTENSIONS_FILE));
+            fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+            fileChooser.setCurrentDirectory(new File(CURRENT_DIRECTORY));
+            return fileChooser;
+        }
+    }
+
+    private static class FilenameUtils {
+
+        public static String getExtension(File file) {
+            String fileName = file.getName();
+            // если в имени файла есть точка и она не является первым символом в названии файла
+            if(fileName.lastIndexOf(".") != -1 && fileName.lastIndexOf(".") != 0)
+                // то вырезаем все знаки после последней точки в названии файла, то есть ХХХХХ.txt -> txt
+                return fileName.substring(fileName.lastIndexOf(".")+1);
+                // в противном случае возвращаем заглушку, то есть расширение не найдено
+            else return "";
         }
     }
 }
