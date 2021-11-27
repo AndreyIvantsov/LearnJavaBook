@@ -1,7 +1,4 @@
 {
-    "java.project.sourcePaths": [
-        "ch13/MyForm",
-        "ch12/MiniMusicPlayer3",
-        "ch13\\BeatBox"
-    ]
+    "java.project.sourcePaths": ["src"],
+    "java.project.outputPath": "bin"
 }
